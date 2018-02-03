@@ -10,10 +10,13 @@ def tf_idf(x):
 def personal_trainer(path):
     data = np.load(path)
     x, y = data[:,1:], data[:,1]
-    x_normal = tf_idf(x)
-    model = SGDClassifier(max_iter=10)
-    model.fit(x_normal, y)
-    print(model.score(x_normal, y))
+
+    # Preprocessing
+
+    tests = []
+    for test in tests:
+        test.fit()
+        print(test.score())
 
 if __name__ == '__main__':
     try:
