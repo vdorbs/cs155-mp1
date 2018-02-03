@@ -1,3 +1,5 @@
 training_data.txt
 training_data.npy
 .venv
+*.swp
+*.swo
