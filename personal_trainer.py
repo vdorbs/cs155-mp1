@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 from sklearn.linear_model import SGDClassifier
+from sklearn.neighbors import KNeighborsClassifier
 
 class Test:
     def __init__(self, name, model, x, y):
@@ -46,6 +47,7 @@ def personal_trainer(path):
             tf_idf_with_lengths(x), y
         )
     ]
+    tests = [Test('KNN unnormalized', KNeighborsClassifier(n_neighbors = k, weights = 'uniform'), x, y)]
     for test in tests:
         test.fit()
         print(test.name, test.score())
