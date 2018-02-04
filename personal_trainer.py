@@ -109,7 +109,7 @@ if __name__ == '__main__':
             pred = personal_prophet(sys.argv[4], model, idf)
             lines = ['{},{}'.format(i + 1, int(p)) for i, p in enumerate(pred)]
             timestr = time.strftime("%Y%m%d-%H%M%S")
-            with open('predictions_{}.txt'.format(timestr), 'w') as fh:
+            with open('predictions_{}.csv'.format(timestr), 'w') as fh:
                 fh.write('Id,Prediction')
                 fh.write('\n'.join(lines))
     except IndexError as e:
