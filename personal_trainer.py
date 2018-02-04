@@ -21,33 +21,45 @@ def tf_idf(x):
     tf = (x.T / np.sum(x.T + np.finfo(float).eps, 0)).T
     return tf * idf
 
-def personal_trainer(path):
+def tests_by_player(player, x, y):
+    return {
+        'bijan': [
+            Test(
+                'KNN unnormalized', 
+                KNeighborsClassifier(algorithm = 'kd_tree', n_neighbors = 10, weights = 'uniform'), 
+                x, y
+            )
+        ],
+        'victor': [
+            Test(
+                'Unnormalized',
+                SGDClassifier(max_iter=10),
+                x, y
+            ),
+            Test(
+                'Unnormalized with lengths',
+                SGDClassifier(max_iter=10),
+                unnormalized_with_lengths(x), y
+            ),
+            Test(
+                'tf-idf',
+                SGDClassifier(max_iter=10),
+                tf_idf(x), y
+            ),
+            Test(
+                'tf-idf with lengths',
+                SGDClassifier(max_iter=10),
+                tf_idf_with_lengths(x), y
+            )
+        ],
+        'kristjan': []
+    }[player]
+
+def personal_trainer(path, player):
     data = np.load(path)
     x, y = data[:,1:], data[:,1]
-    max_iter = 10
-    tests = [
-        Test(
-            'Unnormalized',
-            SGDClassifier(max_iter=max_iter),
-            x, y
-        ),
-        Test(
-            'Unnormalized with lengths',
-            SGDClassifier(max_iter=max_iter),
-            unnormalized_with_lengths(x), y
-        ),
-        Test(
-            'tf-idf',
-            SGDClassifier(max_iter=max_iter),
-            tf_idf(x), y
-        ),
-        Test(
-            'tf-idf with lengths',
-            SGDClassifier(max_iter=max_iter),
-            tf_idf_with_lengths(x), y
-        )
-    ]
-    tests = [Test('KNN unnormalized', KNeighborsClassifier(n_neighbors = k, weights = 'uniform'), x, y)]
+    
+    tests = tests_by_player(player, x, y)
     for test in tests:
         test.fit()
         print(test.name, test.score())
@@ -62,7 +74,7 @@ def tf_idf_with_lengths(x):
 
 if __name__ == '__main__':
     try:
-        personal_trainer(sys.argv[1])
+        personal_trainer(sys.argv[1], sys.argv[2])
     except IndexError as e:
         print('FEED ME DATA')
         print('   (ಠ‿ಠ)')
