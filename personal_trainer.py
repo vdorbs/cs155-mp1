@@ -5,6 +5,7 @@ from sklearn.base import clone
 from sklearn.model_selection import KFold
 from sklearn.linear_model import SGDClassifier
 from sklearn.ensemble import AdaBoostClassifier
+import time
 
 class Test:
     def __init__(self, name, model, x, y):
@@ -101,8 +102,10 @@ if __name__ == '__main__':
         model, idf = personal_trainer(sys.argv[1], sys.argv[2])
         if '--test' in sys.argv:
             pred = personal_prophet(sys.argv[4], model, idf)
-            for i, p in enumerate(pred):
-                print('{} {}'.format(i + 1, p))
+            lines = ['{} {}'.format(i + 1, p) for i, p in enumerate(pred)]
+            timestr = time.strftime("%Y%m%d-%H%M%S")
+            with open('predictions_{}.txt'.format(timestr), 'w') as fh:
+                fh.write('\n'.join(lines))
     except IndexError as e:
         print('FEED ME DATA')
         print('   (ಠ‿ಠ)')
