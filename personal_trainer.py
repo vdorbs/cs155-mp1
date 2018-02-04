@@ -47,12 +47,6 @@ def tf_idf(x, idf=None):
     tf = (x.T / np.sum(x.T + np.finfo(float).eps, 0)).T
     return tf * idf, idf
 
-def tf(x):
-    idf = np.log(x.shape[0] / np.apply_along_axis(np.count_nonzero, 0, x))
-    tf = x
-    return tf * idf
-
-
 def tests_by_player(player, x, y):
     x_tf_idf, _ = tf_idf(x)
     return {
@@ -64,7 +58,7 @@ def tests_by_player(player, x, y):
             KFoldTest(
                 Test(
                     'standard',
-                    LinearSVC(C=1.3, loss='hinge'),
+                    LinearSVC(),
                     x, y
                 )
             )
@@ -88,7 +82,6 @@ def personal_trainer(path, player):
 def personal_prophet(path, model, idf):
     x = np.load(path)
     x, _ = tf_idf(x, idf)
-    print(x.shape)
     return model.predict(x)
 
 def tf_idf_with_lengths(x):
