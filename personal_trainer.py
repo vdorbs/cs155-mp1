@@ -1,6 +1,11 @@
 import sys
 import numpy as np
 from sklearn.linear_model import SGDClassifier
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.model_selection import GridSearchCV
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.pipeline import Pipeline
 
 class Test:
     def __init__(self, name, model, x, y):
@@ -24,33 +29,54 @@ def tests_by_player(player, x, y):
     return {
         'bijan': [],
         'victor': [
+        ],
+        'kristjan': [
             Test(
-                'Unnormalized',
-                SGDClassifier(max_iter=10),
+                'MultinomialNB',
+                MultinomialNB(),
+                tf_idf_with_lengths(x), y
+            ),
+            Test(
+                'GaussianNB',
+                MultinomialNB(),
+                tf_idf_with_lengths(x), y
+            ),
+            Test(
+                'Gridsearch pipeline SGD',
+                GridSearchCV(Pipeline([
+                    ('tfidf', TfidfTransformer()),
+                    ('clf', SGDClassifier(loss='hinge',
+                                           penalty='l1',
+                                           random_state=42,
+                                           max_iter=10,
+                                           tol=None))]),
+                             {'clf__alpha': (1e-2, 1e-3)},
+                            n_jobs=-1),
                 x, y
             ),
             Test(
-                'Unnormalized with lengths',
-                SGDClassifier(max_iter=10),
-                unnormalized_with_lengths(x), y
+                'Gridsearch pipeline Bayes',
+                GridSearchCV(Pipeline([
+                    ('tfidf', TfidfTransformer()),
+                    ('clf', MultinomialNB())]),
+                             {'clf__alpha': (1e-2, 1e-3)},
+                            n_jobs=-1),
+                x, y
             ),
             Test(
-                'tf-idf',
-                SGDClassifier(max_iter=10),
-                tf_idf(x), y
-            ),
-            Test(
-                'tf-idf with lengths',
-                SGDClassifier(max_iter=10),
-                tf_idf_with_lengths(x), y
+                'RandomForestClassifier',
+                RandomForestClassifier(
+                    n_estimators=100,
+                    max_depth=15,
+                    n_jobs = -1
+                ), tf_idf(x), y
             )
-        ],
-        'kristjan': []
+        ]
     }[player]
 
 def personal_trainer(path, player):
     data = np.load(path)
-    x, y = data[:,1:], data[:,1]
+    x, y = data[:,1:], data[:,0]
 
     tests = tests_by_player(player, x, y)
     for test in tests:
