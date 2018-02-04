@@ -3,5 +3,6 @@ training_data.npy
 .venv
 *.swp
 *.swo
-
 predictions_
+test_data.npy
+test_data.txt
