@@ -41,7 +41,7 @@ class KFoldTest:
         return np.mean(scores), np.std(scores)
 
 def tf_idf(x, idf=None):
-    if not idf:
+    if idf is None:
         idf = np.log(x.shape[0] / np.apply_along_axis(np.count_nonzero, 0, x))
     tf = (x.T / np.sum(x.T + np.finfo(float).eps, 0)).T
     return tf * idf, idf
@@ -56,35 +56,36 @@ def tests_by_player(player, x, y):
     x_tf_idf, _ = tf_idf(x)
     return {
         'bijan': [
-            KFoldTest(
-                Test(
-                    'standard',
-                    AdaBoostClassifier(base_estimator = LinearSVC(), algorithm='SAMME'),
-                    tf_idf(x), y
-                )
-            )
          ],
         'victor': [
         ],
         'kristjan': [
+            Test(
+                'standard',
+                SGDClassifier(max_iter=10),
+                x, y
+            )
         ]
     }[player]
 
 def personal_trainer(path, player):
     data = np.load(path)
     x, y = data[:,1:], data[:,0]
+    x, idf = tf_idf(x)
     tests = tests_by_player(player, x, y)
     for test in tests:
         test.fit()
         print(test.name, test.score())
 
     try:
-        return tests[0].model
+        return tests[0].model, idf
     except Exception as e:
-        return tests[0].models[0].model
+        return tests[0].models[0].model, idf
 
-def personal_prophet(path, model):
+def personal_prophet(path, model, idf):
     x = np.load(path)
+    x, _ = tf_idf(x, idf)
+    print(x.shape)
     return model.predict(x)
 
 def tf_idf_with_lengths(x):
@@ -97,9 +98,9 @@ def normalize(x):
 
 if __name__ == '__main__':
     try:
-        model = personal_trainer(sys.argv[1], sys.argv[2])
+        model, idf = personal_trainer(sys.argv[1], sys.argv[2])
         if '--test' in sys.argv:
-            pred = personal_prophet(sys.argv[4], model)
+            pred = personal_prophet(sys.argv[4], model, idf)
             for i, p in enumerate(pred):
                 print('{} {}'.format(i + 1, p))
     except IndexError as e:
