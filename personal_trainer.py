@@ -1,11 +1,13 @@
 import sys
 import numpy as np
-from sklearn.linear_model import SGDClassifier
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.model_selection import GridSearchCV
-from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.pipeline import Pipeline
+from sklearn.svm import LinearSVC, SVC
+from sklearn.base import clone
+from sklearn.model_selection import KFold
+from keras.models import Sequential
+from keras.layers import Dense, Activation, Dropout
+from keras.layers import Flatten, BatchNormalization
+from keras import regularizers
+import keras
 
 class Test:
     def __init__(self, name, model, x, y):
@@ -20,80 +22,75 @@ class Test:
     def score(self):
         return self.model.score(self.x, self.y)
 
-def tf_idf(x):
-    idf = np.log(x.shape[0] / np.apply_along_axis(np.count_nonzero, 0, x))
+class KFoldTest:
+    def __init__(self, test, n_splits=5):
+        self.name = test.name
+        self.models = [clone(test.model) for i in range(n_splits)]
+        self.kf = KFold(n_splits=n_splits)
+        self.x = test.x
+        self.y = test.y
+
+    def fit(self):
+        for model, (train, _) in zip(self.models, self.kf.split(self.x)):
+            x, y = self.x[train], self.y[train]
+            model.fit(x, y)
+
+    def score(self):
+        scores = []
+        for model, (_, test) in zip(self.models, self.kf.split(self.x)):
+            x, y = self.x[test], self.y[test]
+            scores.append(model.score(x, y))
+        scores = np.array(scores)
+        return np.mean(scores), np.std(scores)
+
+def tf_idf(x, idf=None):
+    if not idf:
+        idf = np.log(x.shape[0] / np.apply_along_axis(np.count_nonzero, 0, x))
     tf = (x.T / np.sum(x.T + np.finfo(float).eps, 0)).T
-    return tf * idf
+    return tf * idf, idf
 
 def tests_by_player(player, x, y):
+    x_tf_idf, _ = tf_idf(x)
     return {
         'bijan': [],
         'victor': [
         ],
         'kristjan': [
-            Test(
-                'MultinomialNB',
-                MultinomialNB(),
-                tf_idf_with_lengths(x), y
-            ),
-            Test(
-                'GaussianNB',
-                MultinomialNB(),
-                tf_idf_with_lengths(x), y
-            ),
-            Test(
-                'Gridsearch pipeline SGD',
-                GridSearchCV(Pipeline([
-                    ('tfidf', TfidfTransformer()),
-                    ('clf', SGDClassifier(loss='hinge',
-                                           penalty='l1',
-                                           random_state=42,
-                                           max_iter=10,
-                                           tol=None))]),
-                             {'clf__alpha': (1e-2, 1e-3)},
-                            n_jobs=-1),
-                x, y
-            ),
-            Test(
-                'Gridsearch pipeline Bayes',
-                GridSearchCV(Pipeline([
-                    ('tfidf', TfidfTransformer()),
-                    ('clf', MultinomialNB())]),
-                             {'clf__alpha': (1e-2, 1e-3)},
-                            n_jobs=-1),
-                x, y
-            ),
-            Test(
-                'RandomForestClassifier',
-                RandomForestClassifier(
-                    n_estimators=100,
-                    max_depth=15,
-                    n_jobs = -1
-                ), tf_idf(x), y
-            )
         ]
     }[player]
 
 def personal_trainer(path, player):
     data = np.load(path)
     x, y = data[:,1:], data[:,0]
-
     tests = tests_by_player(player, x, y)
     for test in tests:
         test.fit()
         print(test.name, test.score())
 
-def unnormalized_with_lengths(x):
-    return np.append(x, np.reshape(np.sum(x, 1), (-1, 1)), 1)
+    try:
+        return tests[0].model
+    except Exception as e:
+        return tests[0].models[0].model
+
+def personal_prophet(path, model):
+    x = np.load(path)
+    return model.predict(x)
 
 def tf_idf_with_lengths(x):
     x_sums = np.reshape(np.sum(x, 1), (-1, 1))
     x_normal = tf_idf(x)
     return np.append(x_normal, x_sums, 1)
 
+def normalize(x):
+    return (x - np.mean(x, 0)) / np.std(x, 0)
+
 if __name__ == '__main__':
     try:
-        personal_trainer(sys.argv[1], sys.argv[2])
+        model = personal_trainer(sys.argv[1], sys.argv[2])
+        if '--test' in sys.argv:
+            pred = personal_prophet(sys.argv[4], model)
+            for i, p in enumerate(pred):
+                print('{} {}'.format(i + 1, p))
     except IndexError as e:
         print('FEED ME DATA')
         print('   (ಠ‿ಠ)')
