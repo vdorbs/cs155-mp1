@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.svm import LinearSVC
 from sklearn.base import clone
 from sklearn.model_selection import KFold
+from sklearn.linear_model import SGDClassifier
 
 class Test:
     def __init__(self, name, model, x, y):
@@ -68,7 +69,6 @@ def tests_by_player(player, x, y):
 def personal_trainer(path, player):
     data = np.load(path)
     x, y = data[:,1:], data[:,0]
-
     tests = tests_by_player(player, x, y)
     for test in tests:
         test.fit()
