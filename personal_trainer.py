@@ -107,9 +107,10 @@ if __name__ == '__main__':
         model, idf = personal_trainer(sys.argv[1], sys.argv[2])
         if '--test' in sys.argv:
             pred = personal_prophet(sys.argv[4], model, idf)
-            lines = ['{} {}'.format(i + 1, int(p)) for i, p in enumerate(pred)]
+            lines = ['{},{}'.format(i + 1, int(p)) for i, p in enumerate(pred)]
             timestr = time.strftime("%Y%m%d-%H%M%S")
             with open('predictions_{}.txt'.format(timestr), 'w') as fh:
+                fh.write('Id,Prediction')
                 fh.write('\n'.join(lines))
     except IndexError as e:
         print('FEED ME DATA')
