@@ -3,11 +3,8 @@ import numpy as np
 from sklearn.svm import LinearSVC, SVC
 from sklearn.base import clone
 from sklearn.model_selection import KFold
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout
-from keras.layers import Flatten, BatchNormalization
-from keras import regularizers
-import keras
+from sklearn.linear_model import SGDClassifier
+from sklearn.ensemble import AdaBoostClassifier
 
 class Test:
     def __init__(self, name, model, x, y):
@@ -49,10 +46,24 @@ def tf_idf(x, idf=None):
     tf = (x.T / np.sum(x.T + np.finfo(float).eps, 0)).T
     return tf * idf, idf
 
+def tf(x):
+    idf = np.log(x.shape[0] / np.apply_along_axis(np.count_nonzero, 0, x))
+    tf = x
+    return tf * idf
+
+
 def tests_by_player(player, x, y):
     x_tf_idf, _ = tf_idf(x)
     return {
-        'bijan': [],
+        'bijan': [
+            KFoldTest(
+                Test(
+                    'standard',
+                    AdaBoostClassifier(base_estimator = LinearSVC(), algorithm='SAMME'),
+                    tf_idf(x), y
+                )
+            )
+         ],
         'victor': [
         ],
         'kristjan': [
