@@ -3,3 +3,5 @@ training_data.npy
 .venv
 *.swp
 *.swo
+test_data.npy
+test_data.txt

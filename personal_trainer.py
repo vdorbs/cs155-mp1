@@ -58,6 +58,11 @@ def tests_by_player(player, x, y):
         'bijan': [
          ],
         'victor': [
+            Test(
+                'standard',
+                LinearSVC(),
+                x, y
+            )
         ],
         'kristjan': [
             Test(
