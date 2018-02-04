@@ -59,17 +59,14 @@ def tests_by_player(player, x, y):
         'bijan': [
          ],
         'victor': [
-            Test(
-                'standard',
-                LinearSVC(),
-                x, y
-            )
         ],
         'kristjan': [
-            Test(
-                'standard',
-                SGDClassifier(max_iter=10),
-                x, y
+            KFoldTest(
+                Test(
+                    'standard',
+                    LinearSVC(C=1.3, loss='hinge'),
+                    x, y
+                )
             )
         ]
     }[player]
@@ -83,10 +80,10 @@ def personal_trainer(path, player):
         test.fit()
         print(test.name, test.score())
 
-    try:
+    if type(tests[0]).__name__ == 'Test':
         return tests[0].model, idf
-    except Exception as e:
-        return tests[0].models[0].model, idf
+    else:
+        return tests[0].models[0], idf
 
 def personal_prophet(path, model, idf):
     x = np.load(path)
@@ -110,7 +107,7 @@ if __name__ == '__main__':
             lines = ['{},{}'.format(i + 1, int(p)) for i, p in enumerate(pred)]
             timestr = time.strftime("%Y%m%d-%H%M%S")
             with open('predictions_{}.csv'.format(timestr), 'w') as fh:
-                fh.write('Id,Prediction')
+                fh.write('Id,Prediction\n')
                 fh.write('\n'.join(lines))
     except IndexError as e:
         print('FEED ME DATA')
