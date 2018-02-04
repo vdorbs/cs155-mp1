@@ -4,6 +4,7 @@ from sklearn.svm import LinearSVC
 from sklearn.base import clone
 from sklearn.model_selection import KFold
 from sklearn.linear_model import SGDClassifier
+from sklearn.ensemble import AdaBoostClassifier
 
 class Test:
     def __init__(self, name, model, x, y):
@@ -44,9 +45,23 @@ def tf_idf(x):
     tf = (x.T / np.sum(x.T + np.finfo(float).eps, 0)).T
     return tf * idf
 
+def tf(x):
+    idf = np.log(x.shape[0] / np.apply_along_axis(np.count_nonzero, 0, x))
+    tf = x
+    return tf * idf
+
+
 def tests_by_player(player, x, y):
     return {
-        'bijan': [],
+        'bijan': [
+            KFoldTest(
+                Test(
+                    'standard',
+                    AdaBoostClassifier(base_estimator = LinearSVC(), algorithm='SAMME'),
+                    tf_idf(x), y
+                )
+            )
+         ],
         'victor': [
             KFoldTest(
                 Test(
