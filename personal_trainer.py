@@ -8,11 +8,15 @@ from sklearn.ensemble import AdaBoostClassifier
 import time
 
 class Test:
-    def __init__(self, name, model, x, y):
+    def __init__(self, name, model, x, y, noise=False):
         self.name = name
         self.model = model
-        self.x = x
+        if noise:
+            self.x = add_noise(x)
+        else:
+            self.x = x
         self.y = y
+        self.noise = noise
 
     def fit(self):
         self.model.fit(self.x, self.y)
@@ -21,16 +25,21 @@ class Test:
         return self.model.score(self.x, self.y)
 
 class KFoldTest:
-    def __init__(self, test, n_splits=5):
+    def __init__(self, test, n_splits=5, noise=False):
         self.name = test.name
         self.models = [clone(test.model) for i in range(n_splits)]
         self.kf = KFold(n_splits=n_splits)
         self.x = test.x
         self.y = test.y
+        self.noise = noise
 
     def fit(self):
         for model, (train, _) in zip(self.models, self.kf.split(self.x)):
-            x, y = self.x[train], self.y[train]
+            if self.noise:
+                x = add_noise(self.x[train])
+            else:
+                x = self.x[train]
+            y = self.y[train]
             model.fit(x, y)
 
     def score(self):
@@ -47,6 +56,13 @@ def tf_idf(x, idf=None):
     tf = (x.T / np.sum(x.T + np.finfo(float).eps, 0)).T
     return tf * idf, idf
 
+def add_noise(x, scale=0.0005):
+    # noise = np.random.normal(scale=scale, size=x.shape)
+    # return x + noise
+    nx = np.copy(x)
+    nx[np.where(nx != 0)] += np.random.normal(scale=scale, size=np.count_nonzero(x))
+    return nx
+
 def tests_by_player(player, x, y):
     x_tf_idf, _ = tf_idf(x)
     return {
@@ -55,11 +71,26 @@ def tests_by_player(player, x, y):
         'victor': [
         ],
         'kristjan': [
+            Test(
+                'LinearSVC w/ noise',
+                LinearSVC(),
+                x, y,
+                noise=True
+            ),
             KFoldTest(
                 Test(
-                    'standard',
+                    'LinearSVC w/ noise',
                     LinearSVC(),
-                    x, y
+                    x, y,
+                    noise=True
+                )
+            ),
+            KFoldTest(
+                Test(
+                    'LinearSVC w/o noise',
+                    LinearSVC(),
+                    x, y,
+                    noise=False
                 )
             )
         ]
